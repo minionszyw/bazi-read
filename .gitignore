@@ -1,7 +1,22 @@
+# Python environment and caches
 .venv/
 __pycache__/
+*.py[cod]
 .pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Build artifacts
 *.egg-info/
 build/
 dist/
+
+# Local reports and temporary files
 outputs/
+tmp/
+.coverage
+.coverage.*
+htmlcov/
+.DS_Store
+/docs/validation.md
+/examples/result.md

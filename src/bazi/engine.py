@@ -2,7 +2,7 @@
 import math
 from functools import lru_cache
 import json
-from pathlib import Path
+from importlib.resources import files
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 from calendar import monthrange
@@ -20,7 +20,7 @@ class BaziError(ValueError):
     def as_dict(self): return {'code':self.code,'message':str(self),'details':self.details}
 def fail(code,msg,details=None): raise BaziError(code,msg,details)
 def places(query=''):
-    data=json.loads(Path(__file__).with_name('latlng.json').read_text())
+    data=json.loads(files('bazi').joinpath('data', 'latlng.json').read_text(encoding='utf-8'))
     out=[]
     def walk(n,path):
         p=path+[n['name']]
