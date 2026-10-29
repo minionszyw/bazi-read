@@ -14,7 +14,7 @@ def main():
         else:
             with open(a.input) as f: data=json.load(f)
             birth=data.get('birth',data)
-            result=calculate(birth,data.get('rules'),data.get('options')) if a.command=='chart' else compare(birth,data.get('profiles'))
+            result=calculate(birth,data.get('rules'),data.get('options')) if a.command=='chart' else compare(birth,data.get('profiles'),data.get('options'))
         print(json.dumps(result,ensure_ascii=False,indent=2))
     except (BaziError,ValueError,OSError) as e:
         print(json.dumps({'error':e.as_dict() if isinstance(e,BaziError) else {'code':'INPUT','message':str(e)}},ensure_ascii=False),file=sys.stderr); sys.exit(2)

@@ -4,9 +4,9 @@ from datetime import datetime,timedelta
 from bazi import calculate,compare,BaziError
 from bazi.engine import ten, G, terms, equation
 B=dict(sex='male',year=2000,month=2,day=29,hour=12,minute=30,longitude=120,utc_offset_minutes=480)
-def chart(**kw): return calculate(B|kw,options={'year_count':1})
+def chart(**kw): return calculate(B|kw,options={})
 def test_basic():
-    r=chart(); assert len(r['monthly'])==12; assert len(r['luck']['periods'])==10
+    r=chart(); assert 'analysis' not in r; assert len(r['luck']['periods'])==10
     assert r['natal']['day']['stem_ten_god']=='日主'
     assert r==chart()
 def test_gregorian():
@@ -55,7 +55,7 @@ def test_calendar_roundtrip(year):
 def test_cross_checked_pillars(date,expected):
     # Fixtures captured from independent lunar-python comparison.
     y,m,d=date
-    r=calculate(B|dict(year=y,month=m,day=d,hour=12),{'time_basis':'civil'}, {'year_count':1})
+    r=calculate(B|dict(year=y,month=m,day=d,hour=12),{'time_basis':'civil'}, {})
     assert [p['ganzhi'] for p in r['natal'].values()]==expected
 
 def test_luck_directions_and_month_ends():
@@ -64,7 +64,7 @@ def test_luck_directions_and_month_ends():
             r=chart(year=year,month=1,day=31,sex=sex)
             yi=G.index(r['natal']['year']['ganzhi'][0])
             assert r['luck']['forward']==((yi%2==0)==(sex=='male'))
-            assert len(r['monthly'])==12
+            assert 'analysis' not in r
 
 def test_unknown_rule_and_longitude():
     with pytest.raises(BaziError): calculate(B,{'unknown':True})

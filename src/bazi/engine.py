@@ -110,7 +110,7 @@ def relations(ps):
             if zs in [set(g) for g in groups]: out.append({'type':typ,'positions':[k for k,_ in combo],'rule_id':'REL-01'})
     return out
 
-def calculate(birth,rules=None,options=None):
+def _facts(birth,rules=None,options=None):
     r=DEFAULT| (rules or {}); o=options or {}
     for k,allowed in {'time_basis':['apparent','mean','civil'],'year_boundary':['lichun','spring_festival'],'day_boundary':['midnight','zi_start'],'late_zi':['same_day','next_day']}.items():
         if r[k] not in allowed: fail('RULE',f'{k}无效')
@@ -138,12 +138,11 @@ def calculate(birth,rules=None,options=None):
     years,rem=divmod(age_seconds,360*86400); months,rem=divmod(rem,30*86400); days,rem=divmod(rem,86400)
     month_abs=t.year*12+t.month-1+int(years)*12+int(months); sy,sm=divmod(month_abs,12); sm+=1
     start=t.replace(year=sy,month=sm,day=min(t.day,monthrange(sy,sm)[1]))+timedelta(days=days,seconds=rem)
-    count=int(o.get('luck_count',10)); horizon=int(o.get('year_count',100)); target=int(o.get('analysis_year',t.year))
-    if not 1<=count<=12 or not 1<=horizon<=120 or not 1900<=target<=2220: fail('OPTIONS','输出范围超限')
+    count=34  # Covers analysis years through 2220, independently of overview size.
     luck=[]
     for i in range(count):
         p=gz(idx(month)+(i+1)*(1 if forward else -1)); year=start.year+10*i
-        luck.append({'index':i+1,'start':start.replace(year=year,day=min(start.day,monthrange(year,start.month)[1])).isoformat(),'pillar':pillar(p,day[0]),'relations':relations(ps|{'luck':p})})
+        luck.append({'index':i+1,'start':start.replace(year=year,day=min(start.day,monthrange(year,start.month)[1])).isoformat(),'end':start.replace(year=year+10,day=min(start.day,monthrange(year+10,start.month)[1])).isoformat(),'pillar':pillar(p,day[0])})
     cday=sxtwl.fromSolar(t.year,t.month,t.day)
     aux={'fetal_month_formula':gz(0), 'fetal_300_days':None,'life_palace':None}
     fg=G[(G.index(month[0])+1)%10]+Z[(Z.index(month[1])+3)%12]; aux['fetal_month_formula']={'ganzhi':fg,'rule_id':'AUX-01'}
@@ -156,19 +155,12 @@ def calculate(birth,rules=None,options=None):
     distance=min(abs((v['utc']-utc).total_seconds()) for v in ts)
     if distance<60 or min(clock.minute*60+clock.second,3600-clock.minute*60-clock.second)<60: warnings.append('BOUNDARY_SENSITIVE：靠近节气或整点，请核对记录及计算精度')
     def event(v): return {'name':v['name'],'utc':v['utc'].isoformat(),'distance_seconds':(v['utc']-utc).total_seconds()}
-    return {'schema_version':'1.0','engine_version':'0.1.0','dependencies':{k:version(k) for k in ['sxtwl','tzdata']},'input':birth,'rules':r,
+    return {'dependencies':{k:version(k) for k in ['sxtwl','tzdata']},'input':birth,'rules':r,
       'time':{'civil':t.isoformat(),'utc':utc.isoformat(),'mean_solar':mean.isoformat() if lon is not None else None,'apparent_solar':apparent.isoformat() if lon is not None else None,'selected_clock':clock.isoformat(),'longitude':lon,'longitude_source':ls,'equation_minutes':eot,'longitude_from_utc_minutes':4*lon if lon is not None else None,'lunar':{'year':cday.getLunarYear(),'month':lm,'day':cday.getLunarDay(),'is_leap_month':cday.isLunarLeap()}},
       'natal':natal,'season':{'previous_term':event(before[-1]),'next_term':event(after[0]),'previous_jie':event(jie_before),'next_jie':event(jie_after),'elapsed_since_jie_seconds':(utc-jie_before['utc']).total_seconds()},
       'relations':relations(ps),'luck':{'forward':forward,'reference_jie':event(edge),'conversion_convention':'3 elapsed days = 1 symbolic year (360 days); Gregorian calendar addition','interval_seconds':delta,'starting_age':{'years':int(years),'months':int(months),'days':int(days),'seconds':rem},'start':start.isoformat(),'periods':luck},
-      'annual':[{'year':y,'year_boundary':'lichun','pillar':pillar(gz(y-4),day[0]),'relations':relations(ps|{'annual':gz(y-4)})} for y in range(t.year,t.year+horizon)],
-      'monthly':monthly(target,day[0],ps),
-      'auxiliary':aux,'warnings':warnings,'interpretation_guide':'docs/analysis.md'}
-def compare(birth,profiles=None):
-    profiles=profiles or {f'{basis}/{boundary}':{'time_basis':basis,'day_boundary':boundary} for basis in ['apparent','mean','civil'] for boundary in ['midnight','zi_start']}
-    result={name:calculate(birth,r) for name,r in profiles.items()}; first=next(iter(result.values()))
-    return {'profiles':result,'differences':{name:[k for k in first['natal'] if first['natal'][k]!=v['natal'][k]] for name,v in result.items()}}
-
-def monthly(year,day,ps):
+      'auxiliary':aux,'warnings':warnings}
+def monthly(year,day):
     # Twelve solar months of the lichun year, including next January.
     tt=[v for v in terms(year) if v['index']%2]
     lc=next(i for i,v in enumerate(tt) if v['index']==3 and v['utc'].year==year)
@@ -176,7 +168,7 @@ def monthly(year,day,ps):
     for n in range(12):
         v,w=tt[lc+n:lc+n+2]
         p=G[((year-4)%10%5*2+2+n)%10]+Z[(n+2)%12]
-        out.append({'start':v['utc'].isoformat(),'end':w['utc'].isoformat(),'pillar':pillar(p,day),'relations':relations(ps|{'monthly':p})})
+        out.append({'start':v['utc'].isoformat(),'end':w['utc'].isoformat(),'pillar':pillar(p,day)})
     return out
 
 def stars(ps):
@@ -199,3 +191,120 @@ def stars(ps):
         for name,table in [('驿马','寅亥申巳'),('桃花','酉午卯子'),('华盖','辰丑戌未'),('将星','子酉午卯')]:
             add(name,table[group],ref+'.branch')
     return out
+
+
+def _core_pillar(p):
+    z = Z.index(p['ganzhi'][1])
+    return {k: v for k, v in p.items() if k not in ('nayin', 'void', 'growth_stage')} | {
+        'branch_element': '水土木木土火火土金金土水'[z],
+        'branch_polarity': '阳' if z % 2 == 0 else '阴',
+    }
+
+
+def _growth(stem, branch):
+    g, z = G.index(stem), Z.index(branch)
+    start = [11, 6, 2, 9, 2, 9, 5, 0, 8, 3][g]
+    return '长生 沐浴 冠带 临官 帝旺 衰 病 死 墓 绝 胎 养'.split()[((z-start)*(1 if g%2==0 else -1))%12]
+
+
+def _incremental(ps, added):
+    return [v for v in relations(ps) if any(k in added for k in v['positions'])]
+
+
+def _intervals(start, end, periods):
+    # All intervals are half-open and compared as absolute instants.
+    cuts = {start, end}
+    for p in periods:
+        for key in ('start', 'end'):
+            t = datetime.fromisoformat(p[key])
+            if start < t < end:
+                cuts.add(t)
+    cuts = sorted(cuts)
+    for a, b in zip(cuts, cuts[1:]):
+        active = next((p for p in periods if datetime.fromisoformat(p['start']) <= a < datetime.fromisoformat(p['end'])), None)
+        yield a, b, active
+
+
+def calculate(birth, rules=None, options=None):
+    if options is not None and not isinstance(options, dict):
+        fail('OPTIONS', 'options必须为对象')
+    o = options or {}
+    allowed = {'luck_count', 'analysis_year', 'include_monthly', 'include_auxiliary', 'include_trace'}
+    if not isinstance(o, dict) or set(o)-allowed:
+        fail('OPTIONS', '未知或已移除的输出选项（year_count已移除）')
+    for key in ('include_monthly', 'include_auxiliary', 'include_trace'):
+        if key in o and not isinstance(o[key], bool):
+            fail('OPTIONS', key+'必须为布尔值')
+    count = o.get('luck_count', 10)
+    target = o.get('analysis_year')
+    if isinstance(count, bool) or not isinstance(count, int) or not 1 <= count <= 12:
+        fail('OPTIONS', 'luck_count须为1—12的整数')
+    if 'analysis_year' in o and (isinstance(target, bool) or not isinstance(target, int) or not 1900 <= target <= 2220):
+        fail('OPTIONS', 'analysis_year须为1900—2220的整数')
+    if o.get('include_monthly') and target is None:
+        fail('OPTIONS', '展开流月需要analysis_year')
+    raw = _facts(birth, rules, o)
+    ps = {k: p['ganzhi'] for k, p in raw['natal'].items()}
+    day = ps['day'][0]
+    periods = raw['luck']['periods']
+    compact_periods = [{k: p[k] for k in ('index', 'start', 'end')} | {
+        'ganzhi': p['pillar']['ganzhi'], 'stem_ten_god': p['pillar']['stem_ten_god']
+    } for p in periods]
+    result = {
+        'schema_version': '2.0', 'engine_version': '0.2.0',
+        'input': raw['input'], 'rules': raw['rules'],
+        'time': {k: raw['time'][k] for k in ('civil', 'selected_clock', 'longitude', 'lunar')},
+        'natal': {k: _core_pillar(p) for k, p in raw['natal'].items()},
+        'season': {k: raw['season'][k] for k in ('previous_jie', 'next_jie', 'elapsed_since_jie_seconds')},
+        'relations': raw['relations'],
+        'luck': {k: raw['luck'][k] for k in ('forward', 'starting_age', 'start')} | {'periods': compact_periods[:count]},
+        'warnings': raw['warnings'],
+    }
+    if target is not None:
+        tt = terms(target)
+        start = next(v['utc'] for v in tt if v['index']==3 and v['utc'].year==target)
+        end = next(v['utc'] for v in tt if v['index']==3 and v['utc'].year==target+1)
+        annual = gz(target-4)
+        def segments(a, b, month=None):
+            out = []
+            for left, right, active in _intervals(a, b, compact_periods):
+                context = ps | {'annual': annual}
+                if active:
+                    context['luck'] = active['ganzhi']
+                if month:
+                    context['monthly'] = month
+                added = {'monthly'} if month else {'luck', 'annual'}
+                out.append({'start': left.isoformat(), 'end': right.isoformat(),
+                            'luck': active, 'relations': _incremental(context, added)})
+            return out
+        analysis = {'year': target, 'year_boundary': 'lichun', 'start': start.isoformat(),
+                    'end': end.isoformat(), 'annual': _core_pillar(pillar(annual, day)),
+                    'periods': segments(start, end)}
+        if o.get('include_monthly'):
+            months = monthly(target, day)
+            analysis['monthly'] = [
+                {'start': m['start'], 'end': m['end'], 'pillar': _core_pillar(m['pillar']),
+                 'periods': segments(datetime.fromisoformat(m['start']), datetime.fromisoformat(m['end']), m['pillar']['ganzhi'])}
+                for m in months
+            ]
+        result['analysis'] = analysis
+    if o.get('include_auxiliary'):
+        result['auxiliary'] = raw['auxiliary'] | {
+            'pillars': {k: {'nayin': p['nayin'],
+                'void': {'reference': k, 'branches': p['void']},
+                'day_master_growth': {'reference': 'day.stem', 'stage': _growth(day, p['ganzhi'][1])},
+                'self_stem_growth': {'reference': k+'.stem', 'stage': p['growth_stage']}}
+                for k, p in raw['natal'].items()}}
+    if o.get('include_trace'):
+        result['trace'] = {'dependencies': raw['dependencies'], 'time': raw['time'],
+                           'season': raw['season'],
+                           'luck': {k: raw['luck'][k] for k in ('reference_jie', 'conversion_convention', 'interval_seconds')}}
+    return result
+
+
+def compare(birth, profiles=None, options=None):
+    profiles = profiles or {f'{basis}/{boundary}': {'time_basis': basis, 'day_boundary': boundary}
+                           for basis in ['apparent', 'mean', 'civil'] for boundary in ['midnight', 'zi_start']}
+    result = {name: calculate(birth, r, options) for name, r in profiles.items()}
+    first = next(iter(result.values()))
+    return {'profiles': result, 'differences': {name: [k for k in first['natal'] if first['natal'][k]!=v['natal'][k]] for name, v in result.items()}}
