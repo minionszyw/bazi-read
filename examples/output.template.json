@@ -1,0 +1,92 @@
+{
+  "template_version": "2.0",
+  "report_type": "initial",
+  "status": "needs_input",
+  "context": {
+    "birth_revision": 1,
+    "rules": {},
+    "analysis_year": null,
+    "year_selection": {
+      "mode": "",
+      "reference_time": null,
+      "source": ""
+    },
+    "unresolved": []
+  },
+  "input": {
+    "raw_input": "",
+    "normalized_request": null,
+    "field_sources": {},
+    "unresolved": []
+  },
+  "chart": null,
+  "natal": {
+    "day_master": [
+      {
+        "conclusion": "",
+        "basis": [
+          {
+            "field": "",
+            "observation": ""
+          }
+        ],
+        "method": "",
+        "sources": [
+          {
+            "title": "",
+            "edition": "",
+            "chapter": "",
+            "verification": "chapter_located_scan_uncollated",
+            "page": null,
+            "quote": null
+          }
+        ],
+        "conditions": [],
+        "uncertainties": []
+      }
+    ],
+    "month_command": [],
+    "strength": [],
+    "pattern": [],
+    "climate": [],
+    "flow": [],
+    "preferences": []
+  },
+  "fortune": {
+    "overview": [
+      {
+        "period_index": null,
+        "start": null,
+        "end": null,
+        "judgments": []
+      }
+    ],
+    "years": [
+      {
+        "year": null,
+        "segments": [
+          {
+            "start": null,
+            "end": null,
+            "judgments": []
+          }
+        ]
+      }
+    ]
+  },
+  "domains": {
+    "性情": [],
+    "学习": [],
+    "事业": [],
+    "财务": [],
+    "婚恋": [],
+    "六亲": []
+  },
+  "followup": {
+    "question": "",
+    "explanation": "",
+    "recalculated": false,
+    "revision_notes": []
+  },
+  "questions": []
+}

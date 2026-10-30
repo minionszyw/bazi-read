@@ -18,5 +18,3 @@ tmp/
 .coverage.*
 htmlcov/
 .DS_Store
-/docs/validation.md
-/examples/result.md
