@@ -1,5 +1,7 @@
 {
-  "template_version": "2.0",
+  "template_version": "2.1",
+  "name": "用户1",
+  "case_id": null,
   "report_type": "initial",
   "status": "needs_input",
   "context": {
@@ -81,12 +83,6 @@
     "财务": [],
     "婚恋": [],
     "六亲": []
-  },
-  "followup": {
-    "question": "",
-    "explanation": "",
-    "recalculated": false,
-    "revision_notes": []
   },
   "questions": []
 }

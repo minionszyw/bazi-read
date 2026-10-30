@@ -23,7 +23,7 @@
 可选值依次为mean/civil、spring_festival、zi_start、next_day。月柱始终按十二节；太阳时需要经度，缺失不自动退回民用时间。用户指定的规则优先并在结果中展示。
 
 引擎输入可直接用Python `calculate(birth, rules, options)`；CLI使用已补齐的临时输入文件 `bazi chart --input case.json`。
-compare用于有必要的规则对照，不以已知经历暗中挑盘。任务临时输入不覆盖模板，不默认保存长期用户档案。
+compare用于有必要的规则对照，不以已知经历暗中挑盘。任务临时输入不覆盖模板；name和case_id是报告元数据，不传入birth。首次完整报告默认保存，追问不自动修改报告，详见第5节。
 
 ### 年份和展开选项
 
@@ -139,18 +139,20 @@ BOUNDARY_SENSITIVE提示要检查实际是否跨交节、换日或时辰；普�
 |新年份或月份|按需调用相应analysis_year/include_monthly，保留仍有效的原局判断|
 |修改出生资料或规则|birth_revision递增，重新排盘，指出改变的字段并重建受影响结论，不能沿用旧日主十神|
 |新增现实经历|标为用户提供的背景，可检验解释条件，但不倒改规则迎合经历|
-|缺少必要信息|在questions中补问，不索取无关资料|
+|缺少必要信息|自然语言补问，结构化澄清时填写questions，不索取无关资料|
 
-同资料、规则、年份且展开选项足够时复用结果。会话中维护规范化资料、规则、已计算年份及未决项；未要求长期保存时不创建持久档案。无旧上下文时不假装记得旧分析。
+同资料、规则、年份且展开选项足够时复用结果。追问对象不明确时补问，明确时直接读取对应资料。跨会话读取保存报告中的规范化生辰、规则与修订号；没有可读报告或有效上下文时不假装记得旧分析。追问用自然语言解释，不向完整报告追加问答；新计算结果只用于本次回答，明确要求更新报告时才保存新版。
 
 ## 5. 统一输出约定
 
-[输出骨架](../examples/output.template.json)的template_version为2.0，与引擎schema 2.0独立管理。它是空骨架，不是引擎输入或已完成报告。
-只输出一个JSON对象，不附Markdown围栏或JSON外解释。顶层字段保持完整，不适用部分填null或空数组；首次完整报告填input/chart/natal/fortune/domains，澄清填input/questions，追问填followup及需要更新的部分。
+[输出骨架](../examples/output.template.json)的template_version为2.1，与引擎schema 2.0独立管理。它是空骨架，不是引擎输入或已完成报告。
+完整报告文件是一个JSON对象，不附Markdown围栏或JSON外解释，顶层字段保持完整；首次报告填写input/chart/natal/fortune/domains。澄清可先自然语言补问；使用结构化澄清时report_type为clarification，只填相关资料和questions，其余为null或空数组，不保存为完整报告。追问不使用本模板，直接自然语言回答；保存成功通知也用普通对话，不受报告JSON约束。
 
 |字段|填写方式|
 |---|---|
-|report_type|initial、clarification或followup|
+|name|可选姓名去除首尾空白后使用；未提供或为空时为“用户1”，仅作显示|
+|case_id|首次建立资料生成UUID，格式见下文；同一资料复用时保持稳定|
+|report_type|initial或clarification；新保存的完整报告仍为initial，不代表只能生成一次|
 |status|complete、partial或needs_input；流程完成不代表判断必然准确|
 |context|生辰修订号、实际rules、analysis_year、year_selection及未决项；year_selection记录方式、参考时刻和来源|
 |input|原文、normalized_request、字段来源、未决项；补齐前不运行|
@@ -158,7 +160,6 @@ BOUNDARY_SENSITIVE提示要检查实际是否跨交节、换日或时辰；普�
 |natal|日主、月令、力量、格局、寒暖燥湿、气势、喜忌，各组为判断记录数组|
 |fortune|overview为各步阶段解释；years按年份和实际交运区间解释，保留对应start/end|
 |domains|六个默认主题各为判断记录数组；不足就说明未定，不填通用吉凶套话|
-|followup|问题、解释、是否重新排盘、修订说明|
 |questions|确有必要的补问；无则空数组|
 
 判断记录统一采用模板natal.day_master中展示的结构：conclusion、basis、method、sources、conditions、uncertainties。
@@ -166,7 +167,18 @@ basis各项写field和observation，例如field为natal.day.ganzhi；不使用JS
 多盘时field补明年份/规则分支，观察必须对应实际结果；来源直接随判断附书名、版本、篇章、核验状态、page和quote，未核实页码或引文填null。项目归纳用verification=synthesis，不能冒充古籍原句。
 conditions可以记录反证、救应和适用范围；条件不足时在uncertainties写清，允许结论暂不确定。示例记录只是字段骨架，应复制结构后填真实内容，不把空对象当作完成分析。
 
-完成前核对：JSON可解析、字段与真实排盘一致、交运段正确、来源状态真实、生辰修订后的旧结论已更新。不再维护独立报告Schema、来源注册表或依赖图。
+### 姓名、资料识别与保存
+
+- 首次建档用 `str(uuid.uuid4())` 生成小写标准UUID作为case_id；已有资料保留case_id。缺省姓名始终为“用户1”，不用姓名或生辰散列代替唯一编号，也不因同名自动合并。
+- 同一会话对象明确时直接复用。按姓名查找时，若只有唯一匹配且上下文一致可复用；多个匹配或身份不清时补问，可用case_id定位。遇同名但不同生辰且意图不明时先问是更正同一人还是新增另一人。
+- 首次完整报告默认保存到项目根下 `outputs/<case_id>/report-001.json`。需要保存时才创建目录；该目录已由Git忽略。成功写入并检查JSON后，简短告知姓名、case_id及可点击文件链接；保存失败如实说明，不宣称已保存。
+- 路径只使用校验后的标准UUID和固定格式版本名，不将用户姓名或任意输入拼接为路径。已有case_id先校验格式并定位本地报告；查不到时说明，不自动伪造旧档。
+- 用户明确要求更新时，读取该case目录中report-NNN.json的最大数字版本，另存下一个版本，编号至少三位；已有文件不覆盖，若候选名已存在继续取下一空闲编号。首次保存也先检查目录，不能把“001”作为无条件覆盖位置。
+- 报告文件版本与context.birth_revision分开：更新分析年或解释可产生新文件版本而不改生辰修订；明确更正同一人的生辰或规则时保留case_id，增加birth_revision、重新排盘并重建受影响分析。
+- 追问中的生辰更正、新年份或新计算结果先在会话中使用，不自动修改已有报告；明确要求更新后再保存新版。恢复旧报告时注意当前birth_revision与规则，不把旧结论混入修订后的资料。
+- 跨会话以用户提供的case_id/报告或明确可识别的姓名读取现有档案；默认选数字版本最大的已完成完整报告。保留旧版以便对照，但不能把版本大小当作预测可信度。
+
+完成前核对：JSON可解析、name默认值及case_id正确、字段与真实排盘一致、交运段正确、来源状态真实、旧结论已更新、保存路径和版本未覆盖。完整报告不包含followup字段或追问日志。不再维护独立报告Schema、来源注册表或依赖图。
 
 ## 6. 古籍依据与计算限制
 
@@ -181,7 +193,7 @@ conditions可以记录反证、救应和适用范围；条件不足时在uncerta
 |穷通宝鉴|1926年文明书局本，按日干和季节对读；徐乐吾评注另列|
 |神峰通考|1929年校勘本，病药等论法供比较，不替代主线|
 
-古籍位于项目父目录的“子平古籍”。尚未完成扫描逐条页码校勘，篇章定位不等于已核验原刻全文。未亲自核验时使用chapter_located_scan_uncollated；核对扫描后才用verified_scan。辅助表仍有待校勘标记，不因移除独立来源表而省略。
+古籍位于项目根相对路径 `../子平古籍/`，不可用时说明无法核验，不改用虚构页码或声称已读取。尚未完成扫描逐条页码校勘，篇章定位不等于已核验原刻全文。未亲自核验时使用chapter_located_scan_uncollated；核对扫描后才用verified_scan。辅助表仍有待校勘标记，不因移除独立来源表而省略。
 
 ### 规则索引
 
