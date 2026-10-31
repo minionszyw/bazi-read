@@ -18,9 +18,11 @@ python3 -m venv .venv
 
 ## 工作流
 
-先读[分析指南](../../../docs/analysis.md)，按[输出模板](../../../examples/output.template.json)组织报告。以项目根为基准，古籍位于 `../子平古籍/`，完整报告直接保存到 `outputs/`，不为每份资料创建子目录。
+先读[分析指南](../../../docs/analysis.md)，按[输出模板](../../../examples/output.template.json)组织报告。以项目根为基准，古籍文本位于 [classics/](../../../classics/)，完整报告直接保存到 `outputs/`，不为每份资料创建子目录。
 
-技能安装在项目外时，按项目根读取 `docs/analysis.md` 和 `examples/output.template.json`；本文件中的相对链接用于项目内浏览。
+按需检索相关篇名、术语及其简繁写法，再阅读命中位置的上下文，不一次加载全部古籍。结合 `classics/来源与校验.json` 确认收录范围、章节行号和待核问题，按指南记录文本或扫描核验状态；PDF 仅作可选复核，不是正常分析的依赖。
+
+技能安装在项目外时，按项目根定位 `docs/analysis.md`、`examples/output.template.json` 和 `classics/`；本文件中的相对链接用于项目内浏览。
 
 1. **识别资料**：姓名去除首尾空白后填入name，未提供或为空时填“用户1”。首次用 `str(uuid.uuid4())` 生成case_id，复用时保持稳定；同名不自动合并，对象或更正意图不明时先补问。
 2. **解析生辰**：整理birth/rules/options并保留来源，不将name/case_id传给排盘引擎。历法、同名闰月、生时、时区或地点有关键歧义时先补问；已明确的资料不重复确认。
