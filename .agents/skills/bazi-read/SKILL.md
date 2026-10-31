@@ -1,13 +1,13 @@
 ---
-name: bazi
-description: 接收出生资料，调用本地bazi引擎排原局和岁运，依古籍指南保存JSON分析报告，随后解盘并单独回答后续问题。
+name: bazi-read
+description: 当用户提供出生资料、要求八字（BaZi）排盘、解盘或岁运分析时使用。调用本地 bazi-read 引擎排原局和岁运，依古籍指南保存JSON分析报告，随后解盘并单独回答后续问题。
 ---
 
-# AI Agent 命理分析
+# bazi-read · 八字排盘与 AI 解读
 
 ## 安装依赖
 
-先从本文件所在目录向上两级定位项目根，检查项目环境，仅在缺少依赖时安装。要求Python 3.10+；在项目根运行 `.venv/bin/python -c "import bazi, sxtwl"` 检查，虚拟环境不存在时才创建：
+先从当前工作目录或本文件的祖先目录中定位 bazi-read 项目根，以 `pyproject.toml` 中的项目名和 `src/bazi_read/` 为准；找不到时询问项目路径。技能移至其他 Agent 的目录后仍使用该项目根。检查项目环境，仅在缺少依赖时安装。要求Python 3.10+；在项目根运行 `.venv/bin/python -c "import bazi_read, sxtwl"` 检查，虚拟环境不存在时才创建：
 
 ```sh
 python3 -m venv .venv
@@ -18,15 +18,17 @@ python3 -m venv .venv
 
 ## 工作流
 
-先读[分析指南](../../docs/analysis.md)，按[输出模板](../../examples/output.template.json)组织报告。以项目根为基准，古籍位于 `../子平古籍/`，完整报告直接保存到 `outputs/`，不为每份资料创建子目录。
+先读[分析指南](../../../docs/analysis.md)，按[输出模板](../../../examples/output.template.json)组织报告。以项目根为基准，古籍位于 `../子平古籍/`，完整报告直接保存到 `outputs/`，不为每份资料创建子目录。
+
+技能安装在项目外时，按项目根读取 `docs/analysis.md` 和 `examples/output.template.json`；本文件中的相对链接用于项目内浏览。
 
 1. **识别资料**：姓名去除首尾空白后填入name，未提供或为空时填“用户1”。首次用 `str(uuid.uuid4())` 生成case_id，复用时保持稳定；同名不自动合并，对象或更正意图不明时先补问。
 2. **解析生辰**：整理birth/rules/options并保留来源，不将name/case_id传给排盘引擎。历法、同名闰月、生时、时区或地点有关键歧义时先补问；已明确的资料不重复确认。
-3. **排盘**：用Python `calculate(birth, rules, options)`，或将补齐资料写入任务临时文件后调用 `.venv/bin/bazi chart --input case.json`。地点查询用 `.venv/bin/bazi places 查询词`。核对返回input/rules和warnings，按下述排盘约定处理边界。
+3. **排盘**：用Python `from bazi_read import calculate` 导入并调用 `calculate(birth, rules, options)`，或将补齐资料写入任务临时文件后调用 `.venv/bin/bazi-read chart --input case.json`。地点查询用 `.venv/bin/bazi-read places 查询词`。核对返回input/rules和warnings，按下述排盘约定处理边界。
 4. **分析原局**：按指南第2节分析日干月令、力量、格局、寒暖燥湿、气势和喜忌，依模板记录判断及依据。
 5. **分析岁运与分项**：按下述年份约定展开岁运，依指南第3—4节解释交运分段及六个默认主题；流月、辅助及溯源按需展开。
 6. **保存报告**：按指南第5节审查后，首次完整报告默认保存至 `outputs/<case_id>.json`。显式更新时另存为 `<case_id>-002.json` 起的递增版本，数字后缀至少三位；只使用校验后的UUID，不覆盖已有文件。澄清不保存为完整报告，保存失败如实说明，成功后告知文件链接。
-7. **解盘**：保存成功后在同一轮回复中，按[解盘方法](../../docs/analysis.md#保存后解盘)直接用自然语言讲解，不只返回文件链接或等待再次要求。
+7. **解盘**：保存成功后在同一轮回复中，按[解盘方法](../../../docs/analysis.md#保存后解盘)直接用自然语言讲解，不只返回文件链接或等待再次要求。
 8. **回答追问**：单独用自然语言回答，不写入报告。修正生辰或规则时保留case_id、增加birth_revision并重排；新年份不增加该修订号。仅明确要求更新报告时另存递增文件版本。
 
 跨会话复用时，按case_id定位文件，读取数字版本最大的完整报告（无后缀视为第1版）；对象不明或找不到报告时先说明，不假装记得旧分析。

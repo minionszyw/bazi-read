@@ -1,6 +1,8 @@
-# bazi
+# bazi-read · 八字排盘与 AI 解读
 
-面向 AI Agent 的八字排盘与命理分析工具，支持独立 CLI 排盘。
+面向 AI Agent 的八字（BaZi）排盘与命理分析工具，提供 Agent Skill 和独立 CLI。
+
+BaZi / Four Pillars of Destiny chart calculation and interpretation workflow for AI agents.
 
 用自然语言提供出生资料，由本地引擎计算原局与岁运，Agent 依据古籍分析指南生成报告、讲解命盘，并接续追问。
 
@@ -29,13 +31,19 @@ python3 -m venv .venv
 
 ## Agent 使用
 
-在能读取项目文件、执行本地命令的 AI Agent 环境中打开项目，让 Agent 按[技能文档](.agents/skills/SKILL.md)执行工作流，即可直接对话。
+**Codex**：技能位于项目级目录 `.agents/skills/bazi-read/SKILL.md`。在项目根目录打开 Codex，输入 `$bazi-read` 选择技能并提供出生资料；若技能未出现，重启 Codex 后再试。目录与调用方式见[官方说明](https://learn.chatgpt.com/docs/build-skills)。
+
+**其他 Agent**：将 `.agents/skills/bazi-read/` 整个目录移至对应的技能目录，按该 Agent 的方式加载。保留完整项目并在项目根目录工作；技能安装在项目外时，仍按项目根定位源码、指南和模板。
 
 ### 提供出生资料
 
 提供性别、历法、出生年月日时分、出生地或经度，以及出生记录的时区；姓名可选。例如：
 
-> 我叫小林，男，公历1990年5月17日14:30，出生地北京市东城区，时间记录为当时当地钟表时间，时区 Asia/Shanghai。请分析原局和今年的岁运。
+在 Codex 中使用 `$bazi-read` 指定技能，例如：
+
+```text
+$bazi-read 小林，男，公历1990年5月17日14:30，广东深圳出生
+```
 
 Agent 核对资料后排盘，按指南分析日干月令、力量、格局、寒暖燥湿、气势及喜忌，再结合大运、流年完成分项分析。关键资料有歧义时先补问。
 
@@ -43,15 +51,19 @@ Agent 核对资料后排盘，按指南分析日干月令、力量、格局、�
 
 ### 继续追问
 
-> 刚才为什么这样判断事业？请结合命盘解释。
+```text
+刚才为什么这样判断事业？请结合命盘解释。
+```
 
 可继续讨论已有结论，也可指定其他年份或月份。追问单独用自然语言回答，不写入完整报告。
 
 ### 更新报告
 
-> 请把小林明年的分析更新到报告，保留旧版。
+```text
+请把小林明年的分析更新到报告，保留旧版。
+```
 
-明确要求更新时，另存为 `outputs/<case_id>-002.json` 等递增版本，保留旧文件。资料识别、复用和修订约定见[技能工作流](.agents/skills/SKILL.md#工作流)。
+明确要求更新时，另存为 `outputs/<case_id>-002.json` 等递增版本，保留旧文件。资料识别、复用和修订约定见[技能工作流](.agents/skills/bazi-read/SKILL.md#工作流)。
 
 ## CLI 使用
 
@@ -85,7 +97,7 @@ CLI 可独立计算排盘、对照规则和查询地点，结果以 JSON 输出�
 ```
 
 `luck_count` 为大运步数；`analysis_year: 2026` 指定分析2026立春年，并非自动选择当前年份。`case.json` 是排盘输入，完整报告模板用于 Agent 分析输出。
-字段和可选规则见[排盘约定](.agents/skills/SKILL.md#排盘约定)。
+字段和可选规则见[排盘约定](.agents/skills/bazi-read/SKILL.md#排盘约定)。
 
 ### 执行命令
 
@@ -93,13 +105,13 @@ CLI 可独立计算排盘、对照规则和查询地点，结果以 JSON 输出�
 
 ```sh
 # 原局与指定年份的岁运排盘
-.venv/bin/bazi chart --input case.json
+.venv/bin/bazi-read chart --input case.json
 
 # 对照时间和换日规则
-.venv/bin/bazi compare --input case.json
+.venv/bin/bazi-read compare --input case.json
 
 # 查询出生地
-.venv/bin/bazi places 东城区
+.venv/bin/bazi-read places 东城区
 ```
 
 CLI 提供排盘事实，命理分析、完整报告保存及解盘由 Agent 工作流完成。
@@ -108,7 +120,7 @@ CLI 提供排盘事实，命理分析、完整报告保存及解盘由 Agent 工
 
 |文档|内容|
 |---|---|
-|[技能文档](.agents/skills/SKILL.md)|环境检查、执行流程、输入字段及排盘约定|
+|[技能文档](.agents/skills/bazi-read/SKILL.md)|环境检查、执行流程、输入字段及排盘约定|
 |[分析指南](docs/analysis.md)|古籍论法、原局与岁运分析、报告组织及解盘方法|
 |[输出模板](examples/output.template.json)|完整 JSON 分析报告的统一骨架|
 

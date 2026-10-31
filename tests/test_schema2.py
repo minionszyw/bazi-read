@@ -1,7 +1,7 @@
 from datetime import datetime
 import pytest
-from bazi import calculate, compare, BaziError
-from bazi.engine import _incremental
+from bazi_read import calculate, compare, BaziError
+from bazi_read.engine import _incremental
 
 B = dict(sex='male', year=1990, month=5, day=17, hour=14, minute=30,
          longitude=116.405285, timezone='Asia/Shanghai')

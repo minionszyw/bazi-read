@@ -1,8 +1,8 @@
 import pytest
 import sxtwl
 from datetime import datetime,timedelta
-from bazi import calculate,compare,BaziError
-from bazi.engine import ten, G, terms, equation
+from bazi_read import calculate,compare,BaziError
+from bazi_read.engine import ten, G, terms, equation
 B=dict(sex='male',year=2000,month=2,day=29,hour=12,minute=30,longitude=120,utc_offset_minutes=480)
 def chart(**kw): return calculate(B|kw,options={})
 def test_basic():

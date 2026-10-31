@@ -20,7 +20,7 @@ class BaziError(ValueError):
     def as_dict(self): return {'code':self.code,'message':str(self),'details':self.details}
 def fail(code,msg,details=None): raise BaziError(code,msg,details)
 def places(query=''):
-    data=json.loads(files('bazi').joinpath('data', 'latlng.json').read_text(encoding='utf-8'))
+    data=json.loads(files('bazi_read').joinpath('data', 'latlng.json').read_text(encoding='utf-8'))
     out=[]
     def walk(n,path):
         p=path+[n['name']]
